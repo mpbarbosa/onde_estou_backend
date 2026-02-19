@@ -25,7 +25,7 @@ echo "Map: $MAP_NAME"
 echo ""
 
 # Configuration
-PROJECT_NAME="guia-turistico"
+PROJECT_NAME="onde-estou"
 ALLOWED_ORIGIN="${ALLOWED_ORIGIN:-https://www.mpbarbosa.com}"
 
 # Step 1: Package and deploy geocode-reverse Lambda

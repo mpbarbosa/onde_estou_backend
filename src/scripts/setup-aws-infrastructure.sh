@@ -10,7 +10,7 @@ echo ""
 
 # Configuration
 AWS_REGION="${AWS_REGION:-us-east-1}"
-PROJECT_NAME="guia-turistico"
+PROJECT_NAME="onde-estou"
 MAP_NAME="${PROJECT_NAME}-map"
 PLACE_INDEX_NAME="${PROJECT_NAME}-place-index"
 

@@ -10,7 +10,7 @@ This directory contains the serverless backend for AWS Location Service integrat
 
 ## Directory Structure
 
-```
+```text
 src/
 ├── lambda/
 │   ├── geocode-reverse/      # Reverse geocoding Lambda function
@@ -53,13 +53,13 @@ src/
 Run the infrastructure setup script to create AWS Location Service resources, IAM roles, and policies:
 
 ```bash
-cd /path/to/guia_turistico
-./src/scripts/setup-aws-infrastructure.sh
+cd /path/to/onde-estou/src
+./scripts/setup-aws-infrastructure.sh
 ```
 
 This script creates:
-- AWS Location Service Map (guia-turistico-map)
-- AWS Location Service Place Index (guia-turistico-place-index)
+- AWS Location Service Map (onde-estou-map)
+- AWS Location Service Place Index (onde-estou-place-index)
 - IAM Role for Lambda functions
 - IAM Policy with minimal required permissions
 
@@ -70,7 +70,7 @@ This script creates:
 Deploy the backend API:
 
 ```bash
-./src/scripts/deploy-backend.sh
+./scripts/deploy-backend.sh
 ```
 
 This script:
@@ -150,12 +150,12 @@ Returns map configuration for MapLibre GL JS.
 **Response** (200 OK):
 ```json
 {
-  "mapName": "guia-turistico-map",
+  "mapName": "onde-estou-map",
   "region": "us-east-1",
   "style": "VectorEsriNavigation",
   "mapLibre": {
     "version": "4.0.0",
-    "styleUrl": "https://maps.geo.us-east-1.amazonaws.com/maps/v0/maps/guia-turistico-map/style-descriptor"
+    "styleUrl": "https://maps.geo.us-east-1.amazonaws.com/maps/v0/maps/onde-estou-map/style-descriptor"
   },
   "defaults": {
     "center": [-46.633309, -23.550520],
@@ -222,10 +222,10 @@ Lambda logs are available in CloudWatch:
 
 ```bash
 # View geocoding function logs
-aws logs tail /aws/lambda/guia-turistico-geocode-reverse --follow
+aws logs tail /aws/lambda/onde-estou-geocode-reverse --follow
 
 # View map credentials function logs
-aws logs tail /aws/lambda/guia-turistico-map-credentials --follow
+aws logs tail /aws/lambda/onde-estou-map-credentials --follow
 ```
 
 ### CloudWatch Metrics
@@ -271,18 +271,18 @@ API_ID=$(jq -r '.apiId' src/aws-config.json)
 aws apigatewayv2 delete-api --api-id $API_ID
 
 # Delete Lambda functions
-aws lambda delete-function --function-name guia-turistico-geocode-reverse
-aws lambda delete-function --function-name guia-turistico-map-credentials
+aws lambda delete-function --function-name onde-estou-geocode-reverse
+aws lambda delete-function --function-name onde-estou-map-credentials
 
 # Delete Location Service resources
-aws location delete-map --map-name guia-turistico-map
-aws location delete-place-index --index-name guia-turistico-place-index
+aws location delete-map --map-name onde-estou-map
+aws location delete-place-index --index-name onde-estou-place-index
 
 # Delete IAM resources
-aws iam detach-role-policy --role-name guia-turistico-lambda-role \
+aws iam detach-role-policy --role-name onde-estou-lambda-role \
   --policy-arn $(jq -r '.policyArn' src/aws-config.json)
 aws iam delete-policy --policy-arn $(jq -r '.policyArn' src/aws-config.json)
-aws iam delete-role --role-name guia-turistico-lambda-role
+aws iam delete-role --role-name onde-estou-lambda-role
 ```
 
 ## Next Steps

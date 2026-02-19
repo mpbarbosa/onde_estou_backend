@@ -1,5 +1,5 @@
 {
-  "name": "guia-turistico-geocode-reverse",
+  "name": "onde-estou-geocode-reverse",
   "version": "1.0.0",
   "description": "AWS Lambda function for reverse geocoding using AWS Location Service",
   "main": "index.js",
