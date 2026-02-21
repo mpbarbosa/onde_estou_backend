@@ -9,6 +9,10 @@ tech_stack:
   test_framework: null
   test_command: ''
   lint_command: shellcheck
+  lint_commands:
+    bash: shellcheck
+    javascript: npx eslint src/lambda --ext .js --no-eslintrc --rule '{"no-undef":1,"no-unused-vars":1}'
+    json: npx jsonlint --quiet
 structure:
   source_dirs:
     - src
