@@ -47,6 +47,7 @@ API Gateway HTTP API  (onde-estou-api)
 
 ```
 onde_estou_backend/
+├── setup-aws-lbs.sh                      # Convenience wrapper — runs Step 1 then Step 2
 ├── src/
 │   ├── lambda/
 │   │   ├── geocode-reverse/        # POST /api/geocode/reverse
@@ -58,7 +59,8 @@ onde_estou_backend/
 │   ├── scripts/
 │   │   ├── setup-aws-infrastructure.sh   # Step 1 — create AWS resources
 │   │   └── deploy-backend.sh             # Step 2 — package & deploy Lambda + API GW
-│   └── aws-config.json                   # Generated config (not committed)
+│   ├── aws-config.json                   # Generated config (not committed)
+│   └── aws-config.example.json           # Template showing expected aws-config.json format
 └── README.md
 ```
 
@@ -123,7 +125,21 @@ jq --version
 
 ## Deployment
 
-Both scripts must be run from the **repository root**.
+All scripts must be run from the **repository root**.
+
+### Quick start (one command)
+
+```bash
+./setup-aws-lbs.sh
+```
+
+`setup-aws-lbs.sh` is a convenience wrapper that runs **Step 1** (infrastructure setup) followed by **Step 2** (Lambda + API Gateway deploy) in sequence. It accepts the same environment variable overrides as the individual scripts:
+
+```bash
+AWS_REGION=sa-east-1 ALLOWED_ORIGIN=http://localhost:3000 ./setup-aws-lbs.sh
+```
+
+Use the individual scripts below if you need to run the steps separately.
 
 ### Step 1 — Create AWS infrastructure (run once)
 

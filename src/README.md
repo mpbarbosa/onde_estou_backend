@@ -23,6 +23,7 @@ src/
 │   ├── setup-aws-infrastructure.sh  # Create AWS resources
 │   └── deploy-backend.sh            # Deploy Lambda + API Gateway
 └── aws-config.json            # AWS resource configuration (generated)
+└── aws-config.example.json    # Template showing expected aws-config.json format
 ```
 
 ## Prerequisites
@@ -53,8 +54,7 @@ src/
 Run the infrastructure setup script to create AWS Location Service resources, IAM roles, and policies:
 
 ```bash
-cd /path/to/onde-estou/src
-./scripts/setup-aws-infrastructure.sh
+./src/scripts/setup-aws-infrastructure.sh
 ```
 
 This script creates:
@@ -70,7 +70,7 @@ This script creates:
 Deploy the backend API:
 
 ```bash
-./scripts/deploy-backend.sh
+./src/scripts/deploy-backend.sh
 ```
 
 This script:

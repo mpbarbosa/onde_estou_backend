@@ -62,7 +62,7 @@ MAP_ARN=$(aws location create-map \
 echo ""
 echo -e "${GREEN}✅ Map creation initiated${NC}"
 
-if [ -n "$MAP_ARN" ]; then
+if [[ -n "$MAP_ARN" ]]; then
     echo -e "${GREEN}✅ Map created: $MAP_ARN${NC}"
 else
     # Map might already exist
@@ -72,7 +72,7 @@ else
         --query 'MapArn' \
         --output text 2>/dev/null || echo "")
     
-    if [ -n "$MAP_ARN" ]; then
+    if [[ -n "$MAP_ARN" ]]; then
         echo -e "${YELLOW}⚠️  Map already exists: $MAP_ARN${NC}"
     else
         echo -e "${RED}❌ Failed to create map${NC}"
@@ -91,7 +91,7 @@ PLACE_INDEX_ARN=$(aws location create-place-index \
     --query 'IndexArn' \
     --output text 2>/dev/null || echo "")
 
-if [ -n "$PLACE_INDEX_ARN" ]; then
+if [[ -n "$PLACE_INDEX_ARN" ]]; then
     echo -e "${GREEN}✅ Place Index created: $PLACE_INDEX_ARN${NC}"
 else
     # Place Index might already exist
@@ -101,7 +101,7 @@ else
         --query 'IndexArn' \
         --output text 2>/dev/null || echo "")
     
-    if [ -n "$PLACE_INDEX_ARN" ]; then
+    if [[ -n "$PLACE_INDEX_ARN" ]]; then
         echo -e "${YELLOW}⚠️  Place Index already exists: $PLACE_INDEX_ARN${NC}"
     else
         echo -e "${RED}❌ Failed to create place index${NC}"
@@ -136,7 +136,7 @@ LAMBDA_ROLE_ARN=$(aws iam create-role \
     --query 'Role.Arn' \
     --output text 2>/dev/null || echo "")
 
-if [ -n "$LAMBDA_ROLE_ARN" ]; then
+if [[ -n "$LAMBDA_ROLE_ARN" ]]; then
     echo -e "${GREEN}✅ Lambda role created: $LAMBDA_ROLE_ARN${NC}"
 else
     # Role might already exist
@@ -145,7 +145,7 @@ else
         --query 'Role.Arn' \
         --output text 2>/dev/null || echo "")
     
-    if [ -n "$LAMBDA_ROLE_ARN" ]; then
+    if [[ -n "$LAMBDA_ROLE_ARN" ]]; then
         echo -e "${YELLOW}⚠️  Lambda role already exists: $LAMBDA_ROLE_ARN${NC}"
     else
         echo -e "${RED}❌ Failed to create Lambda role${NC}"
@@ -192,7 +192,7 @@ POLICY_ARN=$(aws iam create-policy \
     --query 'Policy.Arn' \
     --output text 2>/dev/null || echo "")
 
-if [ -n "$POLICY_ARN" ]; then
+if [[ -n "$POLICY_ARN" ]]; then
     echo -e "${GREEN}✅ Policy created: $POLICY_ARN${NC}"
 else
     # Policy might already exist
@@ -218,8 +218,8 @@ echo -e "${GREEN}✅ Policy attached to role${NC}"
 echo ""
 echo "🔑 Step 5b: Granting iam:PassRole to current deployer..."
 CALLER_ARN=$(aws sts get-caller-identity --query Arn --output text)
-CALLER_TYPE=$(echo "$CALLER_ARN" | awk -F: '{print $6}' | cut -d/ -f1)
-CALLER_NAME=$(echo "$CALLER_ARN" | awk -F/ '{print $NF}')
+CALLER_TYPE=$(awk -F: '{split($6,a,"/"); print a[1]}' <<< "$CALLER_ARN")
+CALLER_NAME=$(awk -F/ '{print $NF}' <<< "$CALLER_ARN")
 
 PASSROLE_POLICY='{
   "Version": "2012-10-17",
@@ -233,7 +233,7 @@ PASSROLE_POLICY='{
   }]
 }'
 
-if [ "$CALLER_TYPE" = "user" ]; then
+if [[ "$CALLER_TYPE" = "user" ]]; then
     if aws iam put-user-policy \
         --user-name "$CALLER_NAME" \
         --policy-name "${PROJECT_NAME}-passrole" \

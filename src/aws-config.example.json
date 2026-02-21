@@ -1,0 +1,12 @@
+{
+  "region": "us-east-1",
+  "accountId": "123456789012",
+  "mapName": "onde-estou-map",
+  "placeIndexName": "onde-estou-place-index",
+  "lambdaRoleArn": "arn:aws:iam::123456789012:role/onde-estou-lambda-role",
+  "policyArn": "arn:aws:iam::123456789012:policy/onde-estou-location-policy",
+  "apiId": "abcdef1234",
+  "apiEndpoint": "https://abcdef1234.execute-api.us-east-1.amazonaws.com",
+  "geocodeFunctionName": "onde-estou-geocode-reverse",
+  "mapFunctionName": "onde-estou-map-credentials"
+}

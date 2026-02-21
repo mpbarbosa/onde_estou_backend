@@ -9,7 +9,7 @@ echo "=========================================="
 echo ""
 
 # Load configuration
-if [ ! -f "src/aws-config.json" ]; then
+if [[ ! -f "src/aws-config.json" ]]; then
     echo "❌ AWS configuration not found. Run setup-aws-infrastructure.sh first"
     exit 1
 fi
@@ -102,7 +102,7 @@ API_NAME="${PROJECT_NAME}-api"
 # Check if API exists
 API_ID=$(aws apigatewayv2 get-apis --region "$AWS_REGION" --query "Items[?Name=='$API_NAME'].ApiId" --output text)
 
-if [ -z "$API_ID" ]; then
+if [[ -z "$API_ID" ]]; then
     echo "✨ Creating new API Gateway: $API_NAME"
     API_ID=$(aws apigatewayv2 create-api \
         --name "$API_NAME" \
