@@ -1,14 +1,13 @@
 #!/bin/bash
 # Full AWS Location Based Service setup for onde-estou
-# Version: 1.0.1
-# Runs infrastructure setup then deploys Lambda functions and API Gateway.
+# Version: 1.0.2
 # Must be executed from the repository root.
 #
 # Usage:
 #   ./setup-aws-lbs.sh
 #   AWS_REGION=sa-east-1 ALLOWED_ORIGIN=http://localhost:3000 ./setup-aws-lbs.sh
 
-set -e
+set -euo pipefail
 
 # Resolve repo root regardless of where the script is called from
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

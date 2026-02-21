@@ -1,8 +1,6 @@
 #!/bin/bash
 # Deploy AWS Lambda Functions and API Gateway
-# Version: 1.0.1
-
-set -e
+# Version: 1.0.2
 
 echo "🚀 Deploying AWS Location Service Backend"
 echo "=========================================="

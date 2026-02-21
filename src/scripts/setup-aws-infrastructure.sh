@@ -1,10 +1,6 @@
 #!/bin/bash
 # AWS Location Service Infrastructure Setup Script
-# Version: 1.0.1
-
-set -e
-
-echo "🚀 AWS Location Service Infrastructure Setup"
+# Version: 1.0.2
 echo "=============================================="
 echo ""
 
