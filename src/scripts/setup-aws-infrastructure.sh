@@ -1,6 +1,6 @@
 #!/bin/bash
 # AWS Location Service Infrastructure Setup Script
-# This script creates all required AWS resources for the Guia Turístico application
+# Version: 0.10.0-alpha
 
 set -e
 
@@ -21,17 +21,23 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 # Check if AWS CLI is installed
+echo "🔍 Checking AWS CLI installation..."
 if ! command -v aws &> /dev/null; then
     echo -e "${RED}❌ AWS CLI is not installed${NC}"
     echo "Please install AWS CLI: https://aws.amazon.com/cli/"
     exit 1
+else
+    echo -e "${GREEN}✅ AWS CLI is installed${NC}"
 fi
 
 # Check if AWS credentials are configured
-if ! aws sts get-caller-identity &> /dev/null; then
+echo "🔍 Checking AWS credentials..."
+if ! aws sts get-caller-identity; then
     echo -e "${RED}❌ AWS credentials not configured${NC}"
     echo "Please configure AWS CLI with: aws configure"
     exit 1
+else
+    echo -e "${GREEN}✅ AWS credentials are configured${NC}"
 fi
 
 echo -e "${GREEN}✅ AWS CLI configured${NC}"
@@ -42,6 +48,10 @@ echo ""
 
 # Step 1: Create AWS Location Service Map
 echo "📍 Step 1: Creating AWS Location Service Map..."
+echo "Map Name: $MAP_NAME"
+echo "Map Style: VectorEsriNavigation"
+echo "Pricing Plan: RequestBasedUsage"
+echo "Region: $AWS_REGION"
 MAP_ARN=$(aws location create-map \
     --map-name "$MAP_NAME" \
     --configuration "Style=VectorEsriNavigation" \
@@ -49,6 +59,8 @@ MAP_ARN=$(aws location create-map \
     --region "$AWS_REGION" \
     --query 'MapArn' \
     --output text 2>/dev/null || echo "")
+echo ""
+echo -e "${GREEN}✅ Map creation initiated${NC}"
 
 if [ -n "$MAP_ARN" ]; then
     echo -e "${GREEN}✅ Map created: $MAP_ARN${NC}"
@@ -201,6 +213,41 @@ aws iam attach-role-policy \
     --policy-arn "$POLICY_ARN" 2>/dev/null || true
 
 echo -e "${GREEN}✅ Policy attached to role${NC}"
+
+# Step 5b: Grant current IAM user iam:PassRole on the Lambda role
+echo ""
+echo "🔑 Step 5b: Granting iam:PassRole to current deployer..."
+CALLER_ARN=$(aws sts get-caller-identity --query Arn --output text)
+CALLER_TYPE=$(echo "$CALLER_ARN" | awk -F: '{print $6}' | cut -d/ -f1)
+CALLER_NAME=$(echo "$CALLER_ARN" | awk -F/ '{print $NF}')
+
+PASSROLE_POLICY='{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Action": "iam:PassRole",
+    "Resource": "'"$LAMBDA_ROLE_ARN"'",
+    "Condition": {
+      "StringEquals": {"iam:PassedToService": "lambda.amazonaws.com"}
+    }
+  }]
+}'
+
+if [ "$CALLER_TYPE" = "user" ]; then
+    if aws iam put-user-policy \
+        --user-name "$CALLER_NAME" \
+        --policy-name "${PROJECT_NAME}-passrole" \
+        --policy-document "$PASSROLE_POLICY" 2>/dev/null; then
+        echo -e "${GREEN}✅ PassRole granted to user: $CALLER_NAME${NC}"
+    else
+        echo -e "${YELLOW}⚠️  Could not grant PassRole automatically.${NC}"
+        echo "    Add this inline policy to your IAM user/role manually:"
+        echo "$PASSROLE_POLICY"
+    fi
+else
+    echo -e "${YELLOW}⚠️  Caller is a role/assumed-role ($CALLER_NAME). Skipping automatic PassRole grant.${NC}"
+    echo "    Ensure your IAM identity has iam:PassRole on: $LAMBDA_ROLE_ARN"
+fi
 
 # Wait for IAM role propagation
 echo ""

@@ -1,0 +1,55 @@
+project:
+  name: onde_estou_backend
+  kind: aws_lbs_backend_setup
+  primary_language: bash shell script
+  description: AWS LBS Backend Setup
+tech_stack:
+  primary_language: bash shell script
+  build_system: npm
+  test_framework: null
+  test_command: ''
+  lint_command: shellcheck
+structure:
+  source_dirs:
+    - src
+  test_dirs:
+    - tests
+  docs_dirs:
+    - docs
+workflow:
+  stages:
+    quick:
+      enabled: true
+      steps:
+        - step_00
+        - step_01
+        - step_02
+    medium:
+      enabled: true
+      steps:
+        - step_00
+        - step_01
+        - step_02
+        - step_03
+        - step_04
+        - step_05
+    full:
+      enabled: true
+      steps:
+        - step_00
+        - step_01
+        - step_02
+        - step_03
+        - step_04
+        - step_05
+        - step_06
+        - step_07
+        - step_08
+        - step_0f
+validation:
+  documentation:
+    required: true
+    min_coverage: 80
+  testing:
+    required: true
+    min_coverage: 70

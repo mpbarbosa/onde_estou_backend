@@ -1,5 +1,6 @@
 #!/bin/bash
 # Deploy AWS Lambda Functions and API Gateway
+# Version: 0.10.0-alpha
 
 set -e
 
@@ -54,7 +55,7 @@ else
         --zip-file fileb://src/lambda/geocode-reverse/function.zip \
         --timeout 10 \
         --memory-size 256 \
-        --environment "Variables={PLACE_INDEX_NAME=$PLACE_INDEX_NAME,AWS_REGION=$AWS_REGION,ALLOWED_ORIGIN=$ALLOWED_ORIGIN}" \
+        --environment "Variables={PLACE_INDEX_NAME=$PLACE_INDEX_NAME,ALLOWED_ORIGIN=$ALLOWED_ORIGIN}" \
         --region "$AWS_REGION" > /dev/null
 fi
 
@@ -86,7 +87,7 @@ else
         --zip-file fileb://src/lambda/map-credentials/function.zip \
         --timeout 10 \
         --memory-size 128 \
-        --environment "Variables={MAP_NAME=$MAP_NAME,AWS_REGION=$AWS_REGION,ALLOWED_ORIGIN=$ALLOWED_ORIGIN}" \
+        --environment "Variables={MAP_NAME=$MAP_NAME,ALLOWED_ORIGIN=$ALLOWED_ORIGIN}" \
         --region "$AWS_REGION" > /dev/null
 fi
 

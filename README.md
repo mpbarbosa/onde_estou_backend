@@ -1,2 +1,385 @@
-# onde_estou_backend
-AWS Location Based Service Setup
+# onde_estou_backend — AWS Location Based Service
+
+Serverless AWS backend for **onde estou** — a location-aware app for Brazil.  
+Provides reverse geocoding and map configuration via **AWS Location Service**, exposed through **API Gateway HTTP API + Lambda**.
+
+---
+
+## Table of Contents
+
+- [Architecture](#architecture)
+- [Provisioned AWS Resources](#provisioned-aws-resources)
+- [Live API Endpoints](#live-api-endpoints)
+- [Prerequisites](#prerequisites)
+- [Deployment](#deployment)
+- [API Reference](#api-reference)
+- [Environment Variables](#environment-variables)
+- [IAM & Security](#iam--security)
+- [Monitoring](#monitoring)
+- [Cost Estimate](#cost-estimate)
+- [Troubleshooting](#troubleshooting)
+- [Cleanup](#cleanup)
+
+---
+
+## Architecture
+
+```
+Client (frontend)
+      │
+      ▼
+API Gateway HTTP API  (onde-estou-api)
+      │
+      ├── POST /api/geocode/reverse ──► Lambda: onde-estou-geocode-reverse
+      │                                        │
+      │                                        ▼
+      │                              AWS Location Service
+      │                              Place Index (onde-estou-place-index)
+      │
+      └── GET  /api/map/credentials ──► Lambda: onde-estou-map-credentials
+                                               │
+                                               ▼
+                                     AWS Location Service
+                                     Map (onde-estou-map)
+```
+
+### Repository layout
+
+```
+onde_estou_backend/
+├── src/
+│   ├── lambda/
+│   │   ├── geocode-reverse/        # POST /api/geocode/reverse
+│   │   │   ├── index.js            # Lambda handler (CommonJS)
+│   │   │   └── package.json        # Depends on @aws-sdk/client-location
+│   │   └── map-credentials/        # GET /api/map/credentials
+│   │       ├── index.js            # Lambda handler (no npm deps)
+│   │       └── package.json
+│   ├── scripts/
+│   │   ├── setup-aws-infrastructure.sh   # Step 1 — create AWS resources
+│   │   └── deploy-backend.sh             # Step 2 — package & deploy Lambda + API GW
+│   └── aws-config.json                   # Generated config (not committed)
+└── README.md
+```
+
+---
+
+## Provisioned AWS Resources
+
+The following resources were created in **us-east-1** under account `655139684612`.
+
+| Resource | Name | ARN |
+|---|---|---|
+| Location Map | `onde-estou-map` | `arn:aws:geo:us-east-1:655139684612:map/onde-estou-map` |
+| Place Index | `onde-estou-place-index` | `arn:aws:geo:us-east-1:655139684612:place-index/onde-estou-place-index` |
+| Lambda IAM Role | `onde-estou-lambda-role` | `arn:aws:iam::655139684612:role/onde-estou-lambda-role` |
+| IAM Policy | `onde-estou-location-policy` | `arn:aws:iam::655139684612:policy/onde-estou-location-policy` |
+| Lambda Function | `onde-estou-geocode-reverse` | us-east-1 |
+| Lambda Function | `onde-estou-map-credentials` | us-east-1 |
+| API Gateway | `onde-estou-api` | ID: `b2inkriw8k` |
+
+**Map style**: VectorEsriNavigation  
+**Place Index data provider**: Esri (covers Brazil with high accuracy)
+
+---
+
+## Live API Endpoints
+
+| Method | URL | Description |
+|---|---|---|
+| `POST` | `https://b2inkriw8k.execute-api.us-east-1.amazonaws.com/api/geocode/reverse` | Reverse geocode coordinates → address |
+| `GET` | `https://b2inkriw8k.execute-api.us-east-1.amazonaws.com/api/map/credentials` | MapLibre GL map configuration |
+
+### Quick test
+
+```bash
+# Reverse geocode — São Paulo city centre
+curl -X POST https://b2inkriw8k.execute-api.us-east-1.amazonaws.com/api/geocode/reverse \
+  -H 'Content-Type: application/json' \
+  -d '{"latitude": -23.550520, "longitude": -46.633309}'
+
+# Map configuration
+curl https://b2inkriw8k.execute-api.us-east-1.amazonaws.com/api/map/credentials
+```
+
+---
+
+## Prerequisites
+
+| Tool | Version | Purpose |
+|---|---|---|
+| AWS CLI | 2.x+ | Provision & manage AWS resources |
+| Node.js | 20.x | Lambda runtime & local packaging |
+| `jq` | any | JSON parsing in shell scripts |
+| `zip` | any | Packaging Lambda deployment bundles |
+
+```bash
+aws --version   # Verify AWS CLI
+node --version  # Should be v20.x
+jq --version
+```
+
+---
+
+## Deployment
+
+Both scripts must be run from the **repository root**.
+
+### Step 1 — Create AWS infrastructure (run once)
+
+```bash
+./src/scripts/setup-aws-infrastructure.sh
+```
+
+Creates:
+- AWS Location Service Map (`onde-estou-map`, style `VectorEsriNavigation`)
+- AWS Location Service Place Index (`onde-estou-place-index`)
+- IAM Lambda execution role (`onde-estou-lambda-role`)
+- IAM policy (`onde-estou-location-policy`) with least-privilege permissions
+- Writes `src/aws-config.json` with all resource ARNs
+
+> **Note — manual IAM step**: The script may not be able to grant `iam:PassRole` automatically. If prompted, attach the following inline policy to your IAM user or role:
+>
+> ```json
+> {
+>   "Version": "2012-10-17",
+>   "Statement": [{
+>     "Effect": "Allow",
+>     "Action": "iam:PassRole",
+>     "Resource": "arn:aws:iam::655139684612:role/onde-estou-lambda-role",
+>     "Condition": {
+>       "StringEquals": { "iam:PassedToService": "lambda.amazonaws.com" }
+>     }
+>   }]
+> }
+> ```
+
+### Step 2 — Deploy Lambda functions & API Gateway
+
+```bash
+./src/scripts/deploy-backend.sh
+```
+
+Performs:
+1. `npm install --production` + `zip` for `geocode-reverse` (needs `@aws-sdk/client-location`)
+2. `zip` for `map-credentials` (no npm dependencies)
+3. Creates or updates both Lambda functions (Node.js 20.x runtime)
+4. Creates or updates API Gateway HTTP API with routes and CORS
+5. Configures Lambda resource-based permissions for API Gateway
+6. Updates `src/aws-config.json` with the API endpoint
+
+The script is **idempotent** — re-running it updates existing resources safely.
+
+### Override defaults
+
+```bash
+# Different region
+AWS_REGION=sa-east-1 ./src/scripts/setup-aws-infrastructure.sh
+
+# Custom CORS origin for local development
+ALLOWED_ORIGIN=http://localhost:3000 ./src/scripts/deploy-backend.sh
+```
+
+---
+
+## API Reference
+
+### POST /api/geocode/reverse
+
+Converts a latitude/longitude pair to a postal address using AWS Location Service.
+
+**Request body**
+
+```json
+{
+  "latitude": -23.550520,
+  "longitude": -46.633309
+}
+```
+
+**Response — 200 OK**
+
+```json
+{
+  "provider": "aws-location-service",
+  "coordinates": {
+    "latitude": -23.550520,
+    "longitude": -46.633309
+  },
+  "address": {
+    "label": "Av. Paulista, 1578, São Paulo, SP",
+    "street": "Avenida Paulista",
+    "addressNumber": "1578",
+    "neighborhood": "Bela Vista",
+    "municipality": "São Paulo",
+    "region": "São Paulo",
+    "country": "BRA",
+    "postalCode": "01310-200"
+  }
+}
+```
+
+**Error responses**
+
+| Status | Cause |
+|---|---|
+| `400` | Missing or invalid `latitude`/`longitude` |
+| `404` | No address found for the given coordinates |
+| `500` | AWS Location Service error (AccessDenied, ResourceNotFound) |
+
+> **Coordinate order**: AWS Location Service expects `[longitude, latitude]`. The Lambda handler reverses the frontend's `{latitude, longitude}` input automatically.
+
+---
+
+### GET /api/map/credentials
+
+Returns the MapLibre GL JS map configuration (style URL, region, defaults).
+
+**Response — 200 OK**
+
+```json
+{
+  "mapName": "onde-estou-map",
+  "region": "us-east-1",
+  "style": "VectorEsriNavigation",
+  "mapLibre": {
+    "version": "4.0.0",
+    "styleUrl": "https://maps.geo.us-east-1.amazonaws.com/maps/v0/maps/onde-estou-map/style-descriptor"
+  },
+  "defaults": {
+    "center": [-46.633309, -23.550520],
+    "zoom": 12
+  }
+}
+```
+
+---
+
+## Environment Variables
+
+Automatically set by `deploy-backend.sh`. Can be overridden per function in the Lambda console.
+
+| Variable | Lambda | Value |
+|---|---|---|
+| `AWS_REGION` | both | `us-east-1` |
+| `PLACE_INDEX_NAME` | geocode-reverse | `onde-estou-place-index` |
+| `MAP_NAME` | map-credentials | `onde-estou-map` |
+| `ALLOWED_ORIGIN` | both | `https://www.mpbarbosa.com` (production) |
+
+---
+
+## IAM & Security
+
+### Lambda execution role — minimal permissions
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "geo:SearchPlaceIndexForPosition",
+      "Resource": "arn:aws:geo:us-east-1:655139684612:place-index/onde-estou-place-index"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "geo:GetMap*",
+      "Resource": "arn:aws:geo:us-east-1:655139684612:map/onde-estou-map"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"],
+      "Resource": "*"
+    }
+  ]
+}
+```
+
+### CORS
+
+Both Lambdas read `ALLOWED_ORIGIN` at runtime and set it as the `Access-Control-Allow-Origin` response header.
+
+- **Production**: `https://www.mpbarbosa.com`
+- **Development**: set `ALLOWED_ORIGIN=http://localhost:3000` before running the deploy script
+
+---
+
+## Monitoring
+
+### Live log streaming
+
+```bash
+# Geocode function
+aws logs tail /aws/lambda/onde-estou-geocode-reverse --follow
+
+# Map credentials function
+aws logs tail /aws/lambda/onde-estou-map-credentials --follow
+```
+
+### CloudWatch metrics
+
+Navigate to **CloudWatch → Metrics → Lambda** in the AWS console to view:
+- Invocations, Errors, Throttles
+- Duration (P50, P95, P99)
+
+---
+
+## Cost Estimate
+
+AWS Location Service pricing (us-east-1):
+
+| Service | Price |
+|---|---|
+| Maps | $4.00 per 1,000 tile requests |
+| Geocoding | $4.00 per 1,000 requests |
+| Lambda | $0.20 per 1M requests (first 1M free) |
+| API Gateway HTTP API | $1.00 per 1M requests (first 1M free) |
+
+**Example — 10,000 requests/month**  
+Maps: $0.04 · Geocoding: $0.04 · Lambda: $0.00 · API GW: $0.00 → **~$0.08/month**
+
+Free tier covers all development and light production use.
+
+---
+
+## Troubleshooting
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| `ResourceNotFoundException` in Lambda logs | Function or Location resource not found | Re-run `deploy-backend.sh` |
+| `AccessDeniedException` in Lambda logs | IAM policy not attached | Run setup script; verify `onde-estou-location-policy` is attached to `onde-estou-lambda-role` |
+| CORS error in browser | `ALLOWED_ORIGIN` mismatch | Update Lambda env var `ALLOWED_ORIGIN` to match your frontend origin |
+| Geocode returns 404 | No address data for coordinates | Coordinates may be in a remote/ocean area; AWS Location coverage varies |
+| `iam:PassRole` error during setup | Deployer lacks PassRole permission | Attach the inline policy shown in the [Step 1 note](#step-1--create-aws-infrastructure-run-once) |
+
+---
+
+## Cleanup
+
+Remove all AWS resources to avoid charges:
+
+```bash
+# Read config
+API_ID=$(jq -r '.apiId' src/aws-config.json)
+POLICY_ARN=$(jq -r '.policyArn' src/aws-config.json)
+
+# API Gateway
+aws apigatewayv2 delete-api --api-id $API_ID
+
+# Lambda functions
+aws lambda delete-function --function-name onde-estou-geocode-reverse
+aws lambda delete-function --function-name onde-estou-map-credentials
+
+# Location Service resources
+aws location delete-map --map-name onde-estou-map
+aws location delete-place-index --index-name onde-estou-place-index
+
+# IAM (detach policy before deleting)
+aws iam detach-role-policy --role-name onde-estou-lambda-role --policy-arn $POLICY_ARN
+aws iam delete-policy --policy-arn $POLICY_ARN
+aws iam delete-role --role-name onde-estou-lambda-role
+```
+
+---
+
+**Region**: us-east-1 &nbsp;·&nbsp; **Runtime**: Node.js 20.x &nbsp;·&nbsp; **Last deployed**: 2026-02-19
