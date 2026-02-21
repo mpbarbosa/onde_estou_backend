@@ -1,6 +1,6 @@
 {
   "name": "onde-estou-map-credentials",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "AWS Lambda function for map credentials",
   "main": "index.js",
   "dependencies": {}

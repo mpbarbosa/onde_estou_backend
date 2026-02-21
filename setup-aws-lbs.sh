@@ -1,6 +1,6 @@
 #!/bin/bash
 # Full AWS Location Based Service setup for onde-estou
-# Version: 0.10.0-alpha
+# Version: 1.0.1
 # Runs infrastructure setup then deploys Lambda functions and API Gateway.
 # Must be executed from the repository root.
 #

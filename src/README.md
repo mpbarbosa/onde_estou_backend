@@ -298,4 +298,4 @@ After deploying the backend:
 ---
 
 **Last Updated**: 2026-02-17  
-**Version**: 0.10.0-alpha (planned)
+**Version**: 1.0.1

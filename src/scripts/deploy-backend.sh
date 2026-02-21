@@ -1,6 +1,6 @@
 #!/bin/bash
 # Deploy AWS Lambda Functions and API Gateway
-# Version: 0.10.0-alpha
+# Version: 1.0.1
 
 set -e
 

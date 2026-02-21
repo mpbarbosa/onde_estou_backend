@@ -1,6 +1,6 @@
 {
   "name": "onde-estou-geocode-reverse",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "AWS Lambda function for reverse geocoding using AWS Location Service",
   "main": "index.js",
   "dependencies": {
