@@ -67,5 +67,5 @@ jobs:
           cache-dependency-path: src/lambda/${{ matrix.lambda }}/package.json
 
       - name: Install dependencies
-        run: npm install --production
+        run: npm ci --omit=dev
         working-directory: src/lambda/${{ matrix.lambda }}

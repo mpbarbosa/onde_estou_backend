@@ -39,7 +39,7 @@ ALLOWED_ORIGIN="${ALLOWED_ORIGIN:-https://www.mpbarbosa.com}"
 # Step 1: Package and deploy geocode-reverse Lambda
 echo "📦 Step 1: Packaging geocode-reverse Lambda..."
 cd src/lambda/geocode-reverse || exit 1
-npm install --production
+npm ci --omit=dev
 zip -r function.zip index.js node_modules package.json > /dev/null 2>&1
 cd ../../..
 
