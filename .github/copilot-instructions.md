@@ -6,7 +6,7 @@ Serverless AWS backend for **onde estou** — a location-aware app for Brazil. P
 
 ## Architecture
 
-```
+```text
 src/
 ├── lambda/
 │   ├── geocode-reverse/   # POST /api/geocode/reverse — converts [lat, lng] to address

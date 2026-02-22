@@ -1,0 +1,33 @@
+#!/bin/bash
+# jq stub — parses key fields from the fixture aws-config.json using bash.
+# Supports: jq -r '.key' file  (the only form used in deploy-backend.sh)
+
+FLAG=""
+FILTER=""
+FILE=""
+
+# Parse arguments  (-r .key file  or  .key file  etc.)
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -r) FLAG="-r"; shift ;;
+        .|.*)  FILTER="$1"; shift ;;
+        *)  FILE="$1"; shift ;;
+    esac
+done
+
+if [[ -z "$FILE" || ! -f "$FILE" ]]; then
+    echo "null"
+    exit 0
+fi
+
+# Extract the key name from simple filters like '.region', '.accountId', etc.
+KEY="${FILTER#.}"
+
+# Use python3 (always available in CI) for actual JSON parsing
+python3 -c "
+import json, sys
+with open('$FILE') as f:
+    d = json.load(f)
+val = d.get('$KEY', '')
+print(val if val != '' else 'null')
+"

@@ -2,7 +2,7 @@
 
 ## System Diagram
 
-```
+```text
 Client (frontend)
       │
       ▼
@@ -53,7 +53,7 @@ API Gateway HTTP API  (onde-estou-api)
 
 ## Directory Structure
 
-```
+```text
 onde_estou_backend/
 ├── src/
 │   ├── lambda/

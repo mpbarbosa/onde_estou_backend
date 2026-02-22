@@ -24,7 +24,7 @@ Provides reverse geocoding and map configuration via **AWS Location Service**, e
 
 ## Architecture
 
-```
+```text
 Client (frontend)
       │
       ▼
@@ -45,7 +45,7 @@ API Gateway HTTP API  (onde-estou-api)
 
 ### Repository layout
 
-```
+```text
 onde_estou_backend/
 ├── setup-aws-lbs.sh                      # Convenience wrapper — runs Step 1 then Step 2
 ├── src/
@@ -127,7 +127,11 @@ jq --version
 
 ## Deployment
 
-All scripts must be run from the **repository root**.
+All scripts must be run from the **repository root**. If you cloned the repository and the scripts are not executable, run:
+
+```bash
+chmod +x setup-aws-lbs.sh src/scripts/*.sh
+```
 
 ### Quick start (one command)
 
@@ -255,12 +259,11 @@ Converts a latitude/longitude pair to a postal address using AWS Location Servic
 
 Returns the MapLibre GL JS map configuration (style URL, region, defaults).
 
-#### Response — 200 OK
+#### Response — 200 OK (map credentials)
 
 ```json
 {
   "mapName": "onde-estou-map",
-  "region": "us-east-1",
   "style": "VectorEsriNavigation",
   "mapLibre": {
     "version": "4.0.0",
@@ -324,6 +327,20 @@ Both Lambdas read `ALLOWED_ORIGIN` at runtime and set it as the `Access-Control-
 
 ---
 
+## CI / Continuous Integration
+
+A GitHub Actions workflow (`.github/workflows/ci.yml`) runs automatically on every push and pull request to `main`. It has three jobs:
+
+| Job | What it checks |
+|---|---|
+| `lint-markdown` | All `*.md` files via `mdl` (uses `.mdlrc` + `.mdl_style.rb`) |
+| `lint-shell` | All `*.sh` scripts via `shellcheck` |
+| `validate-lambda-deps` | `npm install --production` succeeds for both Lambda packages |
+
+No AWS credentials are required — the workflow validates only local artifacts. Deployment to AWS remains a manual step via the shell scripts.
+
+---
+
 ## Monitoring
 
 ### Live log streaming
@@ -372,6 +389,22 @@ Free tier covers all development and light production use.
 | CORS error in browser | `ALLOWED_ORIGIN` mismatch | Update Lambda env var `ALLOWED_ORIGIN` to match your frontend origin |
 | Geocode returns 404 | No address data for coordinates | Coordinates may be in a remote/ocean area; AWS Location coverage varies |
 | `iam:PassRole` error during setup | Deployer lacks PassRole permission | Attach the inline policy shown in the [Step 1 note](#step-1--create-aws-infrastructure-run-once) |
+| Script exits with `Permission denied` | Script not executable | Run `chmod +x setup-aws-lbs.sh src/scripts/*.sh` |
+
+### Script exit codes
+
+Both `setup-aws-infrastructure.sh` and `deploy-backend.sh` use a consistent exit code convention:
+
+| Exit code | Meaning |
+|---|---|
+| `0` | Success — all steps completed |
+| `1` | Failure — missing prerequisite tool, missing `src/aws-config.json`, or an AWS CLI command returned an error |
+
+When a script exits with code 1 it prints a descriptive error line before exiting. For a full command trace, re-run with:
+
+```bash
+bash -x src/scripts/deploy-backend.sh
+```
 
 ---
 

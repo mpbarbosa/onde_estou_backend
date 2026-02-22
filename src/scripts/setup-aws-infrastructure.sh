@@ -1,6 +1,7 @@
 #!/bin/bash
 # AWS Location Service Infrastructure Setup Script
 # Version: 1.0.2
+set -euo pipefail
 echo "=============================================="
 echo ""
 

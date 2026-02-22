@@ -1,0 +1,106 @@
+#!/bin/bash
+# aws CLI stub — records calls, returns canned responses for each subcommand.
+# Tests can set AWS_STUB_FAIL=<subcommand> to simulate failures.
+
+SUBCOMMAND="${1:-}"
+ACTION="${2:-}"
+
+# Honour failure injection
+if [[ -n "${AWS_STUB_FAIL:-}" && "$SUBCOMMAND" == "$AWS_STUB_FAIL" ]]; then
+    echo "stub: simulated failure for aws $SUBCOMMAND" >&2
+    exit 1
+fi
+
+# Parse --query and --output flags from remaining args
+QUERY_FIELD=""
+OUTPUT_FORMAT="json"
+for arg in "$@"; do
+    case "$QUERY_NEXT" in 1) QUERY_FIELD="$arg"; QUERY_NEXT=0 ;; esac
+    case "$OUTPUT_NEXT" in 1) OUTPUT_FORMAT="$arg"; OUTPUT_NEXT=0 ;; esac
+    [[ "$arg" == "--query" ]] && QUERY_NEXT=1
+    [[ "$arg" == "--output" ]] && OUTPUT_NEXT=1
+done
+
+case "$SUBCOMMAND $ACTION" in
+    "sts get-caller-identity")
+        if [[ "$OUTPUT_FORMAT" == "text" ]]; then
+            case "$QUERY_FIELD" in
+                Account) echo "123456789012" ;;
+                Arn)     echo "arn:aws:iam::123456789012:user/test-user" ;;
+                *)       echo "123456789012" ;;
+            esac
+        else
+            echo '{"UserId":"AIDAEXAMPLE","Account":"123456789012","Arn":"arn:aws:iam::123456789012:user/test-user"}'
+        fi
+        ;;
+    "sts ")
+        echo '{"Account":"123456789012","Arn":"arn:aws:iam::123456789012:user/test-user"}'
+        ;;
+    "location create-map")
+        echo "arn:aws:geo:us-east-1:123456789012:map/onde-estou-map"
+        ;;
+    "location describe-map")
+        echo "arn:aws:geo:us-east-1:123456789012:map/onde-estou-map"
+        ;;
+    "location create-place-index")
+        echo "arn:aws:geo:us-east-1:123456789012:place-index/onde-estou-place-index"
+        ;;
+    "location describe-place-index")
+        echo "arn:aws:geo:us-east-1:123456789012:place-index/onde-estou-place-index"
+        ;;
+    "iam create-role")
+        echo "arn:aws:iam::123456789012:role/onde-estou-lambda-role"
+        ;;
+    "iam get-role")
+        echo "arn:aws:iam::123456789012:role/onde-estou-lambda-role"
+        ;;
+    "iam create-policy")
+        echo "arn:aws:iam::123456789012:policy/onde-estou-location-policy"
+        ;;
+    "iam get-policy")
+        exit 0
+        ;;
+    "iam attach-role-policy")
+        exit 0
+        ;;
+    "iam put-user-policy")
+        exit 0
+        ;;
+    "lambda get-function")
+        exit 0
+        ;;
+    "lambda update-function-code")
+        exit 0
+        ;;
+    "lambda create-function")
+        exit 0
+        ;;
+    "lambda add-permission")
+        exit 0
+        ;;
+    "apigatewayv2 get-apis")
+        echo "existing-api-id"
+        ;;
+    "apigatewayv2 create-api")
+        echo "new-api-id"
+        ;;
+    "apigatewayv2 create-integration")
+        echo "integration-id-stub"
+        ;;
+    "apigatewayv2 get-integrations")
+        echo "integration-id-stub"
+        ;;
+    "apigatewayv2 create-route")
+        exit 0
+        ;;
+    "apigatewayv2 create-deployment")
+        exit 0
+        ;;
+    "apigatewayv2 get-api")
+        echo "https://stub.execute-api.us-east-1.amazonaws.com"
+        ;;
+    *)
+        # Unknown subcommand — succeed silently
+        exit 0
+        ;;
+esac

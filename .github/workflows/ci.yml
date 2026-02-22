@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-markdown:
+    name: Markdown lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install mdl
+        run: gem install mdl --no-document
+
+      - name: Run mdl
+        run: mdl --git-recurse --ignore-front-matter .
+
+  lint-shell:
+    name: Shell lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: sudo apt-get install -y shellcheck
+
+      - name: Run shellcheck
+        run: |
+          find . -name "*.sh" \
+            ! -path "*/node_modules/*" \
+            ! -path "*/.git/*" \
+            | xargs shellcheck
+
+  test-shell:
+    name: Shell script tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install bats
+        run: npm install -g bats
+
+      - name: Run bats tests
+        run: bats test/
+
+  validate-lambda-deps:
+    name: Lambda dependency install
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        lambda: [geocode-reverse, map-credentials]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: src/lambda/${{ matrix.lambda }}/package.json
+
+      - name: Install dependencies
+        run: npm install --production
+        working-directory: src/lambda/${{ matrix.lambda }}

@@ -1,0 +1,3 @@
+#!/bin/bash
+# npm stub — no-ops all npm calls used inside deploy-backend.sh (npm install --production)
+exit 0
