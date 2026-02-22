@@ -62,14 +62,13 @@ MAP_ARN=$(aws location create-map \
     --pricing-plan RequestBasedUsage \
     --region "$AWS_REGION" \
     --query 'MapArn' \
-    --output text 2>/dev/null || echo "")
+    --output text 2>/tmp/aws_create_err || echo "")
 echo ""
-echo -e "${GREEN}✅ Map creation initiated${NC}"
 
 if [[ -n "$MAP_ARN" ]]; then
     echo -e "${GREEN}✅ Map created: $MAP_ARN${NC}"
 else
-    # Map might already exist
+    echo -e "${YELLOW}⚠️  Map creation failed ($(cat /tmp/aws_create_err)), checking if it already exists...${NC}"
     MAP_ARN=$(aws location describe-map \
         --map-name "$MAP_NAME" \
         --region "$AWS_REGION" \
@@ -79,7 +78,7 @@ else
     if [[ -n "$MAP_ARN" ]]; then
         echo -e "${YELLOW}⚠️  Map already exists: $MAP_ARN${NC}"
     else
-        echo -e "${RED}❌ Failed to create map${NC}"
+        echo -e "${RED}❌ Failed to create or find map${NC}"
         exit 1
     fi
 fi
@@ -93,12 +92,12 @@ PLACE_INDEX_ARN=$(aws location create-place-index \
     --pricing-plan RequestBasedUsage \
     --region "$AWS_REGION" \
     --query 'IndexArn' \
-    --output text 2>/dev/null || echo "")
+    --output text 2>/tmp/aws_create_err || echo "")
 
 if [[ -n "$PLACE_INDEX_ARN" ]]; then
     echo -e "${GREEN}✅ Place Index created: $PLACE_INDEX_ARN${NC}"
 else
-    # Place Index might already exist
+    echo -e "${YELLOW}⚠️  Place Index creation failed ($(cat /tmp/aws_create_err)), checking if it already exists...${NC}"
     PLACE_INDEX_ARN=$(aws location describe-place-index \
         --index-name "$PLACE_INDEX_NAME" \
         --region "$AWS_REGION" \
@@ -108,7 +107,7 @@ else
     if [[ -n "$PLACE_INDEX_ARN" ]]; then
         echo -e "${YELLOW}⚠️  Place Index already exists: $PLACE_INDEX_ARN${NC}"
     else
-        echo -e "${RED}❌ Failed to create place index${NC}"
+        echo -e "${RED}❌ Failed to create or find place index${NC}"
         exit 1
     fi
 fi
@@ -138,12 +137,12 @@ LAMBDA_ROLE_ARN=$(aws iam create-role \
     --role-name "$LAMBDA_ROLE_NAME" \
     --assume-role-policy-document file:///tmp/lambda-trust-policy.json \
     --query 'Role.Arn' \
-    --output text 2>/dev/null || echo "")
+    --output text 2>/tmp/aws_create_err || echo "")
 
 if [[ -n "$LAMBDA_ROLE_ARN" ]]; then
     echo -e "${GREEN}✅ Lambda role created: $LAMBDA_ROLE_ARN${NC}"
 else
-    # Role might already exist
+    echo -e "${YELLOW}⚠️  Lambda role creation failed ($(cat /tmp/aws_create_err)), checking if it already exists...${NC}"
     LAMBDA_ROLE_ARN=$(aws iam get-role \
         --role-name "$LAMBDA_ROLE_NAME" \
         --query 'Role.Arn' \
@@ -152,7 +151,7 @@ else
     if [[ -n "$LAMBDA_ROLE_ARN" ]]; then
         echo -e "${YELLOW}⚠️  Lambda role already exists: $LAMBDA_ROLE_ARN${NC}"
     else
-        echo -e "${RED}❌ Failed to create Lambda role${NC}"
+        echo -e "${RED}❌ Failed to create or find Lambda role${NC}"
         exit 1
     fi
 fi
@@ -194,17 +193,17 @@ POLICY_ARN=$(aws iam create-policy \
     --policy-name "$POLICY_NAME" \
     --policy-document file:///tmp/location-policy.json \
     --query 'Policy.Arn' \
-    --output text 2>/dev/null || echo "")
+    --output text 2>/tmp/aws_create_err || echo "")
 
 if [[ -n "$POLICY_ARN" ]]; then
     echo -e "${GREEN}✅ Policy created: $POLICY_ARN${NC}"
 else
-    # Policy might already exist
+    echo -e "${YELLOW}⚠️  Policy creation failed ($(cat /tmp/aws_create_err)), checking if it already exists...${NC}"
     POLICY_ARN="arn:aws:iam::${ACCOUNT_ID}:policy/${POLICY_NAME}"
     if aws iam get-policy --policy-arn "$POLICY_ARN" &> /dev/null; then
         echo -e "${YELLOW}⚠️  Policy already exists: $POLICY_ARN${NC}"
     else
-        echo -e "${RED}❌ Failed to create policy${NC}"
+        echo -e "${RED}❌ Failed to create or find policy${NC}"
         exit 1
     fi
 fi
@@ -214,7 +213,8 @@ echo ""
 echo "🔗 Step 5: Attaching policy to Lambda role..."
 aws iam attach-role-policy \
     --role-name "$LAMBDA_ROLE_NAME" \
-    --policy-arn "$POLICY_ARN" 2>/dev/null || true
+    --policy-arn "$POLICY_ARN" 2>/tmp/aws_create_err || \
+    echo -e "${YELLOW}⚠️  Policy attachment failed (may already be attached): $(cat /tmp/aws_create_err)${NC}"
 
 echo -e "${GREEN}✅ Policy attached to role${NC}"
 
@@ -241,10 +241,10 @@ if [[ "$CALLER_TYPE" = "user" ]]; then
     if aws iam put-user-policy \
         --user-name "$CALLER_NAME" \
         --policy-name "${PROJECT_NAME}-passrole" \
-        --policy-document "$PASSROLE_POLICY" 2>/dev/null; then
+        --policy-document "$PASSROLE_POLICY" 2>/tmp/aws_create_err; then
         echo -e "${GREEN}✅ PassRole granted to user: $CALLER_NAME${NC}"
     else
-        echo -e "${YELLOW}⚠️  Could not grant PassRole automatically.${NC}"
+        echo -e "${YELLOW}⚠️  Could not grant PassRole automatically: $(cat /tmp/aws_create_err)${NC}"
         echo "    Add this inline policy to your IAM user/role manually:"
         echo "$PASSROLE_POLICY"
     fi
@@ -280,7 +280,7 @@ EOF
 echo -e "${GREEN}✅ Configuration saved to src/aws-config.json${NC}"
 
 # Cleanup temp files
-rm -f /tmp/lambda-trust-policy.json /tmp/location-policy.json
+rm -f /tmp/lambda-trust-policy.json /tmp/location-policy.json /tmp/aws_create_err
 
 # Summary
 echo ""

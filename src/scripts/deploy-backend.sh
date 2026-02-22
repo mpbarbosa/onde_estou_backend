@@ -46,7 +46,7 @@ cd ../../..
 GEOCODE_FUNCTION_NAME="${PROJECT_NAME}-geocode-reverse"
 
 # Create or update Lambda function
-if aws lambda get-function --function-name "$GEOCODE_FUNCTION_NAME" &> /dev/null; then
+if aws lambda get-function --function-name "$GEOCODE_FUNCTION_NAME" --region "$AWS_REGION" &> /dev/null; then
     echo "🔄 Updating existing Lambda function: $GEOCODE_FUNCTION_NAME"
     aws lambda update-function-code \
         --function-name "$GEOCODE_FUNCTION_NAME" \
@@ -78,7 +78,7 @@ cd ../../..
 MAP_FUNCTION_NAME="${PROJECT_NAME}-map-credentials"
 
 # Create or update Lambda function
-if aws lambda get-function --function-name "$MAP_FUNCTION_NAME" &> /dev/null; then
+if aws lambda get-function --function-name "$MAP_FUNCTION_NAME" --region "$AWS_REGION" &> /dev/null; then
     echo "🔄 Updating existing Lambda function: $MAP_FUNCTION_NAME"
     aws lambda update-function-code \
         --function-name "$MAP_FUNCTION_NAME" \
@@ -124,43 +124,53 @@ else
 fi
 
 # Create integrations
-GEOCODE_INTEGRATION_ID=$(aws apigatewayv2 create-integration \
+if ! GEOCODE_INTEGRATION_ID=$(aws apigatewayv2 create-integration \
     --api-id "$API_ID" \
     --integration-type AWS_PROXY \
     --integration-uri "arn:aws:apigateway:$AWS_REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$AWS_REGION:$ACCOUNT_ID:function:$GEOCODE_FUNCTION_NAME/invocations" \
     --payload-format-version 2.0 \
     --region "$AWS_REGION" \
     --query 'IntegrationId' \
-    --output text 2>/dev/null || aws apigatewayv2 get-integrations --api-id "$API_ID" --region "$AWS_REGION" --query "Items[?contains(IntegrationUri, '$GEOCODE_FUNCTION_NAME')].IntegrationId" --output text)
+    --output text 2>/tmp/aws_create_err); then
+    echo "ℹ️  Geocode integration creation failed ($(cat /tmp/aws_create_err)), looking up existing..."
+    GEOCODE_INTEGRATION_ID=$(aws apigatewayv2 get-integrations --api-id "$API_ID" --region "$AWS_REGION" --query "Items[?contains(IntegrationUri, '$GEOCODE_FUNCTION_NAME')].IntegrationId" --output text)
+fi
 
-MAP_INTEGRATION_ID=$(aws apigatewayv2 create-integration \
+if ! MAP_INTEGRATION_ID=$(aws apigatewayv2 create-integration \
     --api-id "$API_ID" \
     --integration-type AWS_PROXY \
     --integration-uri "arn:aws:apigateway:$AWS_REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$AWS_REGION:$ACCOUNT_ID:function:$MAP_FUNCTION_NAME/invocations" \
     --payload-format-version 2.0 \
     --region "$AWS_REGION" \
     --query 'IntegrationId' \
-    --output text 2>/dev/null || aws apigatewayv2 get-integrations --api-id "$API_ID" --region "$AWS_REGION" --query "Items[?contains(IntegrationUri, '$MAP_FUNCTION_NAME')].IntegrationId" --output text)
+    --output text 2>/tmp/aws_create_err); then
+    echo "ℹ️  Map integration creation failed ($(cat /tmp/aws_create_err)), looking up existing..."
+    MAP_INTEGRATION_ID=$(aws apigatewayv2 get-integrations --api-id "$API_ID" --region "$AWS_REGION" --query "Items[?contains(IntegrationUri, '$MAP_FUNCTION_NAME')].IntegrationId" --output text)
+fi
 
 # Create routes
 aws apigatewayv2 create-route \
     --api-id "$API_ID" \
     --route-key "POST /api/geocode/reverse" \
     --target "integrations/$GEOCODE_INTEGRATION_ID" \
-    --region "$AWS_REGION" > /dev/null 2>&1 || true
+    --region "$AWS_REGION" > /dev/null 2>/tmp/aws_create_err || \
+    echo "ℹ️  Route 'POST /api/geocode/reverse' may already exist: $(cat /tmp/aws_create_err)"
 
 aws apigatewayv2 create-route \
     --api-id "$API_ID" \
     --route-key "GET /api/map/credentials" \
     --target "integrations/$MAP_INTEGRATION_ID" \
-    --region "$AWS_REGION" > /dev/null 2>&1 || true
+    --region "$AWS_REGION" > /dev/null 2>/tmp/aws_create_err || \
+    echo "ℹ️  Route 'GET /api/map/credentials' may already exist: $(cat /tmp/aws_create_err)"
 
-# Create deployment
-STAGE_NAME="prod"
-aws apigatewayv2 create-deployment \
-    --api-id "$API_ID" \
-    --stage-name "$STAGE_NAME" \
-    --region "$AWS_REGION" > /dev/null 2>&1 || true
+# Ensure $default stage exists (with auto-deploy so routes are immediately live)
+if ! aws apigatewayv2 get-stage --api-id "$API_ID" --stage-name '$default' --region "$AWS_REGION" > /dev/null 2>&1; then
+    aws apigatewayv2 create-stage \
+        --api-id "$API_ID" \
+        --stage-name '$default' \
+        --auto-deploy \
+        --region "$AWS_REGION" > /dev/null
+fi
 
 # Get API endpoint
 API_ENDPOINT=$(aws apigatewayv2 get-api --api-id "$API_ID" --region "$AWS_REGION" --query 'ApiEndpoint' --output text)
@@ -178,7 +188,8 @@ aws lambda add-permission \
     --action lambda:InvokeFunction \
     --principal apigateway.amazonaws.com \
     --source-arn "arn:aws:execute-api:$AWS_REGION:$ACCOUNT_ID:$API_ID/*" \
-    --region "$AWS_REGION" > /dev/null 2>&1 || true
+    --region "$AWS_REGION" > /dev/null 2>/tmp/aws_create_err || \
+    echo "ℹ️  Permission 'apigateway-invoke' on $GEOCODE_FUNCTION_NAME may already exist: $(cat /tmp/aws_create_err)"
 
 aws lambda add-permission \
     --function-name "$MAP_FUNCTION_NAME" \
@@ -186,7 +197,8 @@ aws lambda add-permission \
     --action lambda:InvokeFunction \
     --principal apigateway.amazonaws.com \
     --source-arn "arn:aws:execute-api:$AWS_REGION:$ACCOUNT_ID:$API_ID/*" \
-    --region "$AWS_REGION" > /dev/null 2>&1 || true
+    --region "$AWS_REGION" > /dev/null 2>/tmp/aws_create_err || \
+    echo "ℹ️  Permission 'apigateway-invoke' on $MAP_FUNCTION_NAME may already exist: $(cat /tmp/aws_create_err)"
 
 echo "✅ Permissions configured"
 
@@ -199,7 +211,7 @@ jq ". + {apiId: \"$API_ID\", apiEndpoint: \"$API_ENDPOINT\", geocodeFunctionName
 echo "✅ Configuration updated"
 
 # Cleanup
-rm -f src/lambda/geocode-reverse/function.zip src/lambda/map-credentials/function.zip
+rm -f src/lambda/geocode-reverse/function.zip src/lambda/map-credentials/function.zip /tmp/aws_create_err
 
 # Summary
 echo ""
