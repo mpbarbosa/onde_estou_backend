@@ -6,8 +6,8 @@ project:
 tech_stack:
   primary_language: bash shell script
   build_system: npm
-  test_framework: null
-  test_command: ''
+  test_framework: bats
+  test_command: 'bats test/'
   lint_command: shellcheck
   lint_commands:
     bash: shellcheck
@@ -17,7 +17,7 @@ structure:
   source_dirs:
     - src
   test_dirs:
-    - tests
+    - test
   docs_dirs:
     - docs
 workflow:
