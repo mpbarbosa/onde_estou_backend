@@ -1,6 +1,14 @@
 #!/bin/bash
 # Deploy AWS Lambda Functions and API Gateway
 # Version: 1.0.2
+# Must be executed from the repository root.
+#
+# Usage:
+#   ./src/scripts/deploy-backend.sh
+#   ALLOWED_ORIGIN=http://localhost:3000 ./src/scripts/deploy-backend.sh
+#
+# Env: ALLOWED_ORIGIN (default: https://www.mpbarbosa.com)
+#      AWS_REGION     — read from src/aws-config.json (set by setup-aws-infrastructure.sh)
 set -euo pipefail
 
 echo "🚀 Deploying AWS Location Service Backend"

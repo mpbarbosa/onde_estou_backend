@@ -1,6 +1,13 @@
 #!/bin/bash
 # AWS Location Service Infrastructure Setup Script
 # Version: 1.0.2
+# Must be executed from the repository root.
+#
+# Usage:
+#   ./src/scripts/setup-aws-infrastructure.sh
+#   AWS_REGION=sa-east-1 ./src/scripts/setup-aws-infrastructure.sh
+#
+# Env: AWS_REGION (default: us-east-1)
 set -euo pipefail
 echo "=============================================="
 echo ""
