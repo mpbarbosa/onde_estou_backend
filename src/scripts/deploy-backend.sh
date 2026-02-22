@@ -29,7 +29,7 @@ ALLOWED_ORIGIN="${ALLOWED_ORIGIN:-https://www.mpbarbosa.com}"
 
 # Step 1: Package and deploy geocode-reverse Lambda
 echo "📦 Step 1: Packaging geocode-reverse Lambda..."
-cd src/lambda/geocode-reverse
+cd src/lambda/geocode-reverse || exit 1
 npm install --production
 zip -r function.zip index.js node_modules package.json > /dev/null 2>&1
 cd ../../..
@@ -62,7 +62,7 @@ echo "✅ Geocode Lambda deployed"
 # Step 2: Package and deploy map-credentials Lambda
 echo ""
 echo "📦 Step 2: Packaging map-credentials Lambda..."
-cd src/lambda/map-credentials
+cd src/lambda/map-credentials || exit 1
 zip -r function.zip index.js package.json > /dev/null 2>&1
 cd ../../..
 

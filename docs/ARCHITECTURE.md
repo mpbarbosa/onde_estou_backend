@@ -24,25 +24,30 @@ API Gateway HTTP API  (onde-estou-api)
 ## Components
 
 ### API Gateway HTTP API (`onde-estou-api`)
+
 - Lightweight HTTP API (not REST API) for lower latency and cost.
 - CORS configured at the API level; Lambdas also set `Access-Control-Allow-Origin` for defence-in-depth.
 - Routes invoke Lambda functions via AWS_PROXY integration.
 
 ### Lambda: `onde-estou-geocode-reverse`
+
 - Runtime: **Node.js 20.x**, CommonJS.
 - Accepts `{latitude, longitude}`, reverses coordinate order, calls `SearchPlaceIndexForPosition`.
 - Dependency: `@aws-sdk/client-location` (bundled in the deployment zip via `npm install --production`).
 
 ### Lambda: `onde-estou-map-credentials`
+
 - Runtime: **Node.js 20.x**, CommonJS.
 - Returns static map configuration; no outbound AWS calls at runtime.
 - No npm dependencies — zipped directly.
 
 ### AWS Location Service
+
 - **Place Index** (`onde-estou-place-index`): Esri data provider, optimised for Brazilian addresses.
 - **Map** (`onde-estou-map`): Style `VectorEsriNavigation`, served directly to MapLibre GL JS clients via the style URL.
 
 ### IAM
+
 - Single execution role (`onde-estou-lambda-role`) shared by both Lambdas.
 - Least-privilege policy (`onde-estou-location-policy`): `geo:SearchPlaceIndexForPosition`, `geo:GetMap*`, and CloudWatch Logs.
 

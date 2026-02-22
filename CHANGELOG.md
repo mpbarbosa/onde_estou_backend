@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ## [1.0.1] - 2026-02-21
+
 - Added `setup-aws-lbs.sh` convenience wrapper documented in README (runs setup + deploy in one command).
 - Added `src/aws-config.example.json` template to document the generated config structure.
 - Fixed `src/README.md` script paths to use repo-root-relative `./src/scripts/` prefix.
@@ -13,6 +14,7 @@ All notable changes to this project will be documented in this file.
 - Bumped Lambda package versions from 1.0.0 to 1.0.1.
 
 ## [1.0.0] - 2026-02-19
+
 - Project initialized.
 - AWS Location Service Place Index (`onde-estou-place-index`) provisioned.
 - AWS Location Service Map (`onde-estou-map`, style `VectorEsriNavigation`) provisioned.

@@ -76,9 +76,9 @@ The following resources were created in **us-east-1** under account `65513968461
 | Place Index | `onde-estou-place-index` | `arn:aws:geo:us-east-1:655139684612:place-index/onde-estou-place-index` |
 | Lambda IAM Role | `onde-estou-lambda-role` | `arn:aws:iam::655139684612:role/onde-estou-lambda-role` |
 | IAM Policy | `onde-estou-location-policy` | `arn:aws:iam::655139684612:policy/onde-estou-location-policy` |
-| Lambda Function | `onde-estou-geocode-reverse` | us-east-1 |
-| Lambda Function | `onde-estou-map-credentials` | us-east-1 |
-| API Gateway | `onde-estou-api` | ID: `b2inkriw8k` |
+| Lambda Function | `onde-estou-geocode-reverse` | `arn:aws:lambda:us-east-1:655139684612:function:onde-estou-geocode-reverse` |
+| Lambda Function | `onde-estou-map-credentials` | `arn:aws:lambda:us-east-1:655139684612:function:onde-estou-map-credentials` |
+| API Gateway HTTP API | `onde-estou-api` | ID: `b2inkriw8k` |
 
 **Map style**: VectorEsriNavigation  
 **Place Index data provider**: Esri (covers Brazil with high accuracy)
@@ -90,18 +90,20 @@ The following resources were created in **us-east-1** under account `65513968461
 | Method | URL | Description |
 |---|---|---|
 | `POST` | `https://b2inkriw8k.execute-api.us-east-1.amazonaws.com/api/geocode/reverse` | Reverse geocode coordinates → address |
-| `GET` | `https://b2inkriw8k.execute-api.us-east-1.amazonaws.com/api/map/credentials` | MapLibre GL map configuration |
+| `GET` | `https://b2inkriw8k.execute-api.us-east-1.amazonaws.com/api/map/credentials` | MapLibre GL JS map configuration |
 
 ### Quick test
 
 ```bash
+API_ENDPOINT=https://b2inkriw8k.execute-api.us-east-1.amazonaws.com
+
 # Reverse geocode — São Paulo city centre
-curl -X POST https://b2inkriw8k.execute-api.us-east-1.amazonaws.com/api/geocode/reverse \
+curl -X POST $API_ENDPOINT/api/geocode/reverse \
   -H 'Content-Type: application/json' \
   -d '{"latitude": -23.550520, "longitude": -46.633309}'
 
 # Map configuration
-curl https://b2inkriw8k.execute-api.us-east-1.amazonaws.com/api/map/credentials
+curl $API_ENDPOINT/api/map/credentials
 ```
 
 ---
@@ -148,6 +150,7 @@ Use the individual scripts below if you need to run the steps separately.
 ```
 
 Creates:
+
 - AWS Location Service Map (`onde-estou-map`, style `VectorEsriNavigation`)
 - AWS Location Service Place Index (`onde-estou-place-index`)
 - IAM Lambda execution role (`onde-estou-lambda-role`)
@@ -177,6 +180,7 @@ Creates:
 ```
 
 Performs:
+
 1. `npm install --production` + `zip` for `geocode-reverse` (needs `@aws-sdk/client-location`)
 2. `zip` for `map-credentials` (no npm dependencies)
 3. Creates or updates both Lambda functions (Node.js 20.x runtime)
@@ -204,7 +208,7 @@ ALLOWED_ORIGIN=http://localhost:3000 ./src/scripts/deploy-backend.sh
 
 Converts a latitude/longitude pair to a postal address using AWS Location Service.
 
-**Request body**
+#### Request body
 
 ```json
 {
@@ -213,7 +217,7 @@ Converts a latitude/longitude pair to a postal address using AWS Location Servic
 }
 ```
 
-**Response — 200 OK**
+#### Response — 200 OK
 
 ```json
 {
@@ -235,7 +239,7 @@ Converts a latitude/longitude pair to a postal address using AWS Location Servic
 }
 ```
 
-**Error responses**
+#### Error responses
 
 | Status | Cause |
 |---|---|
@@ -251,7 +255,7 @@ Converts a latitude/longitude pair to a postal address using AWS Location Servic
 
 Returns the MapLibre GL JS map configuration (style URL, region, defaults).
 
-**Response — 200 OK**
+#### Response — 200 OK
 
 ```json
 {
@@ -335,6 +339,7 @@ aws logs tail /aws/lambda/onde-estou-map-credentials --follow
 ### CloudWatch metrics
 
 Navigate to **CloudWatch → Metrics → Lambda** in the AWS console to view:
+
 - Invocations, Errors, Throttles
 - Duration (P50, P95, P99)
 

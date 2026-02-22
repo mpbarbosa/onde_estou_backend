@@ -29,18 +29,21 @@ src/
 ## Prerequisites
 
 1. **AWS CLI** installed and configured
+
    ```bash
    aws --version  # Should be 2.x or higher
    aws configure  # Set up credentials
    ```
 
 2. **jq** for JSON processing
+
    ```bash
    sudo apt install jq  # Ubuntu/Debian
    brew install jq      # macOS
    ```
 
 3. **Node.js** 20.x for Lambda functions
+
    ```bash
    node --version  # Should be v20.x
    ```
@@ -58,6 +61,7 @@ Run the infrastructure setup script to create AWS Location Service resources, IA
 ```
 
 This script creates:
+
 - AWS Location Service Map (onde-estou-map)
 - AWS Location Service Place Index (onde-estou-place-index)
 - IAM Role for Lambda functions
@@ -74,6 +78,7 @@ Deploy the backend API:
 ```
 
 This script:
+
 - Packages Lambda functions with dependencies
 - Creates/updates Lambda functions
 - Sets up API Gateway HTTP API
@@ -100,6 +105,7 @@ curl $API_ENDPOINT/api/map/credentials
 ```
 
 Expected responses:
+
 - Geocode: JSON with address data
 - Map credentials: JSON with map configuration
 
@@ -110,6 +116,7 @@ Expected responses:
 Converts coordinates to address using AWS Location Service.
 
 **Request**:
+
 ```json
 {
   "latitude": -23.550520,
@@ -118,6 +125,7 @@ Converts coordinates to address using AWS Location Service.
 ```
 
 **Response** (200 OK):
+
 ```json
 {
   "provider": "aws-location-service",
@@ -139,6 +147,7 @@ Converts coordinates to address using AWS Location Service.
 ```
 
 **Error Responses**:
+
 - 400: Invalid coordinates
 - 404: No address found
 - 500: Internal server error
@@ -148,6 +157,7 @@ Converts coordinates to address using AWS Location Service.
 Returns map configuration for MapLibre GL JS.
 
 **Response** (200 OK):
+
 ```json
 {
   "mapName": "onde-estou-map",
@@ -171,13 +181,14 @@ The Lambda functions use these environment variables (automatically configured b
 - `AWS_REGION`: AWS region (e.g., us-east-1)
 - `PLACE_INDEX_NAME`: AWS Location Service Place Index name
 - `MAP_NAME`: AWS Location Service Map name
-- `ALLOWED_ORIGIN`: CORS allowed origin (https://www.mpbarbosa.com)
+- `ALLOWED_ORIGIN`: CORS allowed origin (`https://www.mpbarbosa.com`)
 
 ## Security
 
 ### IAM Permissions
 
 The Lambda execution role has minimal permissions:
+
 - `geo:SearchPlaceIndexForPosition` - Reverse geocoding only
 - `geo:GetMap*` - Read-only map access
 - `logs:*` - CloudWatch logging
@@ -185,12 +196,14 @@ The Lambda execution role has minimal permissions:
 ### CORS Configuration
 
 CORS is configured to allow requests only from:
+
 - Production: `https://www.mpbarbosa.com`
 - Development: Configure `ALLOWED_ORIGIN` environment variable
 
 ### Rate Limiting
 
 API Gateway has default throttling:
+
 - 10,000 requests per second (steady state)
 - 5,000 requests burst
 
@@ -206,6 +219,7 @@ AWS Location Service pricing (as of 2024):
 - **API Gateway**: $1.00 per 1M requests (first 1M free)
 
 **Example**: 10,000 requests/month
+
 - Maps: $0.04
 - Geocoding: $0.04
 - Lambda: $0.00 (free tier)
@@ -257,6 +271,7 @@ Monitor Lambda invocations, errors, and duration in CloudWatch console.
 **Error**: No address found
 
 **Possible causes**:
+
 - Coordinates are in the ocean or remote area
 - Place Index data coverage limited
 - AWS Location Service regional limitations

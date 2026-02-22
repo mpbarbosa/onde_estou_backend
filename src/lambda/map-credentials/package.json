@@ -3,5 +3,8 @@
   "version": "1.0.1",
   "description": "AWS Lambda function for map credentials",
   "main": "index.js",
+  "engines": {
+    "node": ">=20.x"
+  },
   "dependencies": {}
 }

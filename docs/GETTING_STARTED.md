@@ -35,6 +35,7 @@ cd onde_estou_backend
 ```
 
 This creates:
+
 - AWS Location Service Map (`onde-estou-map`)
 - AWS Location Service Place Index (`onde-estou-place-index`)
 - IAM execution role (`onde-estou-lambda-role`) and policy

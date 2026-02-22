@@ -33,6 +33,7 @@ All AWS resources are named with the prefix `onde-estou-` (e.g. `onde-estou-geoc
 Prerequisites: `aws` CLI configured, `jq`, `node` 20.x, `zip`.
 
 Override region or CORS origin:
+
 ```bash
 AWS_REGION=sa-east-1 ./src/scripts/setup-aws-infrastructure.sh
 ALLOWED_ORIGIN=http://localhost:3000 ./src/scripts/deploy-backend.sh
@@ -53,6 +54,7 @@ curl $API_ENDPOINT/api/map/credentials
 ```
 
 View Lambda logs:
+
 ```bash
 aws logs tail /aws/lambda/onde-estou-geocode-reverse --follow
 aws logs tail /aws/lambda/onde-estou-map-credentials --follow
@@ -71,6 +73,7 @@ aws logs tail /aws/lambda/onde-estou-map-credentials --follow
 ## IAM Permissions (minimal)
 
 Lambda role (`onde-estou-lambda-role`) allows:
+
 - `geo:SearchPlaceIndexForPosition` on the Place Index
 - `geo:GetMap*` on the Map
 - `logs:*` for CloudWatch
