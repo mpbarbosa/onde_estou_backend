@@ -41,12 +41,27 @@ Converts a latitude/longitude pair to a postal address using AWS Location Servic
     "addressNumber": "1578",
     "neighborhood": "Bela Vista",
     "municipality": "São Paulo",
+    "subRegion": "Centro",
     "region": "São Paulo",
     "country": "BRA",
-    "postalCode": "01310-200"
+    "postalCode": "01310-200",
+    "interpolated": false
+  },
+  "geometry": {
+    "Point": [-46.633309, -23.550520]
   }
 }
 ```
+
+| Field | Type | Description |
+|---|---|---|
+| `provider` | string | Always `"aws-location-service"` |
+| `coordinates.latitude` | number | Input latitude echoed back |
+| `coordinates.longitude` | number | Input longitude echoed back |
+| `address.label` | string | Full formatted address string |
+| `address.subRegion` | string | District or sub-region (if available) |
+| `address.interpolated` | boolean | `true` if address was interpolated (not exact match) |
+| `geometry.Point` | [number, number] | Matched coordinates as `[longitude, latitude]` |
 
 ### Error Responses
 

@@ -109,7 +109,6 @@ exports.handler = async (event) => {
         interpolated: place.Interpolated || false,
       },
       geometry: place.Geometry,
-      raw: place, // Include raw response for debugging
     };
 
     console.log('Successfully geocoded:', formattedResponse);
