@@ -88,3 +88,16 @@ teardown() {
     [ ! -f "$TEST_TMPDIR/src/lambda/geocode-reverse/function.zip" ]
     [ ! -f "$TEST_TMPDIR/src/lambda/map-credentials/function.zip" ]
 }
+
+@test "deploy-backend.sh: updates aws-config.json with apiId and apiEndpoint" {
+    mkdir -p "$TEST_TMPDIR/src"
+    cp "$REPO_ROOT/test/fixtures/aws-config.json" "$TEST_TMPDIR/src/aws-config.json"
+
+    bash -c "cd '$TEST_TMPDIR' && bash src/scripts/deploy-backend.sh" 2>/dev/null
+
+    run python3 -c "import json; d=json.load(open('$TEST_TMPDIR/src/aws-config.json')); print(type(d).__name__)"
+    [ "$output" = "dict" ]
+
+    run python3 -c "import json; d=json.load(open('$TEST_TMPDIR/src/aws-config.json')); print('apiId' in d and 'apiEndpoint' in d)"
+    [ "$output" = "True" ]
+}

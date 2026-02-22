@@ -1,12 +1,14 @@
 #!/bin/bash
-# jq stub — parses key fields from the fixture aws-config.json using bash.
-# Supports: jq -r '.key' file  (the only form used in deploy-backend.sh)
+# jq stub — parses key fields and merges objects from JSON files.
+# Supports:
+#   jq -r '.key' file           — simple field extraction
+#   jq '. + {k: "v", ...}' file — object merge (used by deploy-backend.sh)
 
 FLAG=""
 FILTER=""
 FILE=""
 
-# Parse arguments  (-r .key file  or  .key file  etc.)
+# Parse arguments
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -r) FLAG="-r"; shift ;;
@@ -20,14 +22,31 @@ if [[ -z "$FILE" || ! -f "$FILE" ]]; then
     exit 0
 fi
 
-# Extract the key name from simple filters like '.region', '.accountId', etc.
-KEY="${FILTER#.}"
+python3 - "$FILE" "$FILTER" <<'PYEOF'
+import json, re, sys
 
-# Use python3 (always available in CI) for actual JSON parsing
-python3 -c "
-import json, sys
-with open('$FILE') as f:
-    d = json.load(f)
-val = d.get('$KEY', '')
-print(val if val != '' else 'null')
-"
+with open(sys.argv[1]) as f:
+    data = json.load(f)
+
+filt = sys.argv[2]
+
+if re.match(r'^\.[a-zA-Z_][a-zA-Z0-9_]*$', filt):
+    # Simple .key extraction
+    key = filt[1:]
+    val = data.get(key, '')
+    print('' if val == '' else (str(val) if isinstance(val, (str, int, float, bool)) else json.dumps(val)))
+elif '. +' in filt or '.+' in filt:
+    # Object merge: . + {k: "v", ...}  — jq allows unquoted keys; quote them for json.loads
+    m = re.search(r'\.\s*\+\s*(\{.+\})\s*$', filt, re.DOTALL)
+    if m:
+        # Quote unquoted jq keys: match `word:` only when followed by a space+quote
+        # (not inside URL values like "https://...")
+        obj_str = re.sub(r'\b(\w+):\s*"', r'"\1": "', m.group(1))
+        try:
+            data.update(json.loads(obj_str))
+        except Exception:
+            pass
+    print(json.dumps(data, indent=2))
+else:
+    print('null')
+PYEOF
