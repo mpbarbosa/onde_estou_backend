@@ -2,13 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [1.0.2] - 2026-02-22
 
-- Hardened all three shell scripts from `set -e` to `set -euo pipefail`; bumped script header versions to 1.0.2.
-- Added BATS integration tests for `setup-aws-lbs.sh`, `deploy-backend.sh`, and `setup-aws-infrastructure.sh` with AWS/jq/npm/zip stubs.
-- Added GitHub Actions CI workflow for automated markdown linting and BATS test execution.
-- Added usage and environment variable documentation to `deploy-backend.sh` and `setup-aws-infrastructure.sh` script headers.
-- Fixed `MD024` markdownlint rule to allow duplicate headings under different parent sections (API docs pattern).
+### Fixed
+
+- `geocode-reverse` Lambda: malformed JSON request body now returns 400 instead of 500.
+- `geocode-reverse` Lambda: removed `raw: place` field from API response (leaked internal AWS Place object).
+- `jq` test stub: repaired `. + {key: "value"}` merge form; URL-colon regex bug caused aws-config to be written as `null` in tests.
+- `.gitignore`: anchored `package-lock.json` rule to `/package-lock.json` (root only) so Lambda lockfiles can be tracked.
+- `.workflow-config.yaml`: corrected `test_dirs` from `tests` (nonexistent) to `test`; set `test_framework: bats` and `test_command: 'bats test/'`.
+- `docs/API.md`: corrected response schema to match actual handler output (added `subRegion`, `interpolated`, `geometry`; removed undocumented `raw` field).
+
+### Added
+
+- `src/lambda/geocode-reverse/package-lock.json` committed for reproducible, auditable Lambda builds.
+- `eslint.config.mjs`: ESLint v9+ flat config for Lambda functions; CI `lint-js` job added.
+- `.editorconfig`: consistent indentation and whitespace rules across all file types; markdown keeps `trim_trailing_whitespace = false` to preserve intentional `<br>` line-breaks.
+- `docs/ARCHITECTURE.md`: Security Model section documenting intentionally-public API, CORS boundary, rate limiting, and IAM wildcard rationale.
+- `test/deploy-backend.bats`: added test asserting `aws-config.json` is updated with `apiId` and `apiEndpoint` after deploy.
+
+### Changed
+
+- `npm install --production` → `npm ci --omit=dev` in `deploy-backend.sh` and CI for deterministic, lockfile-pinned installs.
+- GitHub Actions CI: added `permissions: contents: read` (least-privilege); added `lint-js` job.
+- `docs/.gitkeep` removed (stale placeholder; `docs/` contains real files).
 
 ## [1.0.1] - 2026-02-21
 
