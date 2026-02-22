@@ -33,7 +33,7 @@ API Gateway HTTP API  (onde-estou-api)
 
 - Runtime: **Node.js 20.x**, CommonJS.
 - Accepts `{latitude, longitude}`, reverses coordinate order, calls `SearchPlaceIndexForPosition`.
-- Dependency: `@aws-sdk/client-location` (bundled in the deployment zip via `npm install --production`).
+- Dependency: `@aws-sdk/client-location` (bundled in the deployment zip via `npm ci --omit=dev`).
 
 ### Lambda: `onde-estou-map-credentials`
 
@@ -50,6 +50,14 @@ API Gateway HTTP API  (onde-estou-api)
 
 - Single execution role (`onde-estou-lambda-role`) shared by both Lambdas.
 - Least-privilege policy (`onde-estou-location-policy`): `geo:SearchPlaceIndexForPosition`, `geo:GetMap*`, and CloudWatch Logs.
+- `geo:GetMap*` covers the four map tile operations (`GetMapGlyphs`, `GetMapSprites`, `GetMapStyleDescriptor`, `GetMapTile`) scoped to the specific Map ARN — no broader wildcard.
+
+### Security Model
+
+- **No authorizer** — the API is intentionally public. Both endpoints return only geocoding results and static map configuration; no user data or secrets are exposed.
+- **CORS as browser boundary** — `ALLOWED_ORIGIN` restricts browser-initiated cross-origin requests to the production frontend (`https://www.mpbarbosa.com`). Set this variable before running `deploy-backend.sh`.
+- **Rate limiting** — API Gateway HTTP API applies default throttling (10,000 requests/second burst, 5,000 requests/second steady-state). No additional throttling is configured.
+- **No secrets in responses** — Lambda functions read AWS credentials from the execution role at runtime; no credentials or internal ARNs are included in API responses.
 
 ## Directory Structure
 
