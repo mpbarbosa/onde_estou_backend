@@ -50,6 +50,20 @@ jobs:
       - name: Run bats tests
         run: bats test/
 
+  lint-js:
+    name: JavaScript lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run ESLint
+        run: npx eslint src/lambda
+
   validate-lambda-deps:
     name: Lambda dependency install
     runs-on: ubuntu-latest

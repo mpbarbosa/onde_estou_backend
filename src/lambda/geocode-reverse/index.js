@@ -35,8 +35,20 @@ exports.handler = async (event) => {
   }
 
   try {
-    // Parse request body
-    const body = JSON.parse(event.body || '{}');
+    // Parse request body — return 400 for malformed JSON
+    let body;
+    try {
+      body = JSON.parse(event.body || '{}');
+    } catch {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({
+          error: 'Invalid request',
+          message: 'Request body must be valid JSON',
+        }),
+      };
+    }
     const { latitude, longitude } = body;
 
     // Validate input
